@@ -1,0 +1,50 @@
+name: Build v4l2loopback for Xiaomi 9
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential bc bison flex libssl-dev libelf-dev
+        sudo apt-get install -y gcc-aarch64-linux-gnu
+        
+    - name: Download Xiaomi kernel source
+      run: |
+        git clone --depth 1 --branch cepheus-q-oss https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git kernel
+        
+    - name: Download v4l2loopback
+      run: |
+        git clone --depth 1 https://github.com/umlaeute/v4l2loopback.git
+        
+    - name: Prepare kernel
+      run: |
+        cd kernel
+        export ARCH=arm64
+        export CROSS_COMPILE=aarch64-linux-gnu-
+        make ARCH=arm64 cepheus_defconfig
+        make ARCH=arm64 prepare
+        make ARCH=arm64 modules_prepare
+        
+    - name: Build v4l2loopback module
+      run: |
+        cd v4l2loopback
+        export ARCH=arm64
+        export CROSS_COMPILE=aarch64-linux-gnu-
+        make KERNEL_DIR=../kernel ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
+        
+    - name: Upload module
+      uses: actions/upload-artifact@v4
+      with:
+        name: v4l2loopback-cepheus
+        path: v4l2loopback/*.ko
