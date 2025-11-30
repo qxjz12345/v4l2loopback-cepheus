@@ -64,12 +64,22 @@ jobs:
         make ARCH=arm64 prepare
         make ARCH=arm64 modules_prepare
         
+    - name: Fix kernel Python scripts
+      run: |
+        cd kernel
+        # Fix Python 2 to Python 3 print syntax in gcc-wrapper.py
+        find . -name "*.py" -exec sed -i 's/print >> sys.stderr,/print(/g; s/print >> [^,]*,/print(/g' {} \; || true
+        # Disable module signing to avoid certificate errors
+        scripts/config --disable CONFIG_MODULE_SIG
+        scripts/config --disable CONFIG_MODULE_SIG_ALL
+        make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
+        
     - name: Build v4l2loopback module
       run: |
         cd v4l2loopback
         export ARCH=arm64
         export CROSS_COMPILE=aarch64-linux-gnu-
-        make KERNEL_DIR=../kernel ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
+        make KERNEL_DIR=../kernel ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CONFIG_MODULE_SIG=n
         
     - name: Upload module
       uses: actions/upload-artifact@v4
