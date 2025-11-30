@@ -27,12 +27,36 @@ jobs:
       run: |
         git clone --depth 1 https://github.com/umlaeute/v4l2loopback.git
         
+    - name: Find defconfig
+      run: |
+        echo "Looking for cepheus defconfig..."
+        find kernel -name "*cepheus*" -o -name "*defconfig" | grep -i cepheus || true
+        ls kernel/arch/arm64/configs/ | grep -i cepheus || true
+        
     - name: Prepare kernel
       run: |
         cd kernel
         export ARCH=arm64
         export CROSS_COMPILE=aarch64-linux-gnu-
-        make ARCH=arm64 cepheus_defconfig
+        # Try different possible defconfig names
+        if [ -f arch/arm64/configs/cepheus_defconfig ]; then
+          make ARCH=arm64 cepheus_defconfig
+        elif [ -f arch/arm64/configs/cepheus_user_defconfig ]; then
+          make ARCH=arm64 cepheus_user_defconfig
+        elif [ -f arch/arm64/configs/vendor/cepheus_defconfig ]; then
+          make ARCH=arm64 vendor/cepheus_defconfig
+        else
+          echo "Available defconfigs:"
+          ls arch/arm64/configs/
+          # Use a generic defconfig and modify for modules
+          make ARCH=arm64 defconfig
+        fi
+        # Enable modules support
+        scripts/config --enable CONFIG_MODULES
+        scripts/config --enable CONFIG_MODULE_UNLOAD
+        scripts/config --enable CONFIG_VIDEO_V4L2
+        scripts/config --enable CONFIG_MEDIA_SUPPORT
+        make ARCH=arm64 olddefconfig
         make ARCH=arm64 prepare
         make ARCH=arm64 modules_prepare
         
