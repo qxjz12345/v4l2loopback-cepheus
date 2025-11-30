@@ -70,11 +70,14 @@ jobs:
         # Use python3
         sed -i 's|#!/usr/bin/env python$|#!/usr/bin/env python3|g' scripts/gcc-wrapper.py
         # Fix Python 2 "print >> sys.stderr, msg," (trailing comma = no newline)
-        # -> Python 3 "print(msg, file=sys.stderr, end='')"
         sed -i 's/print\s*>>\s*sys\.stderr\s*,\s*\(.*\),$/print(\1, file=sys.stderr, end="")/g' scripts/gcc-wrapper.py
         # Fix Python 2 "print >> sys.stderr, msg" (no trailing comma)
-        # -> Python 3 "print(msg, file=sys.stderr)"
         sed -i 's/print\s*>>\s*sys\.stderr\s*,\s*\(.*[^,]\)$/print(\1, file=sys.stderr)/g' scripts/gcc-wrapper.py
+        # Fix bytes vs str issue: line.rstrip('\n') -> line.decode().rstrip('\n') if bytes
+        # Add universal_newlines=True to Popen to get str instead of bytes
+        sed -i 's/Popen(\([^)]*\))/Popen(\1, universal_newlines=True)/g' scripts/gcc-wrapper.py
+        # Or fix rstrip to handle both bytes and str
+        sed -i "s/line\.rstrip('\\\\n')/line.rstrip('\\\\n') if isinstance(line, str) else line.decode().rstrip('\\\\n')/g" scripts/gcc-wrapper.py
         # Show the fixed file for debugging
         echo "=== Fixed gcc-wrapper.py ==="
         cat scripts/gcc-wrapper.py
