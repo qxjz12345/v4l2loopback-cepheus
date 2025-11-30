@@ -18,6 +18,10 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y build-essential bc bison flex libssl-dev libelf-dev
         sudo apt-get install -y gcc-aarch64-linux-gnu
+        # Fix yylloc multiple definition error in dtc
+        sudo apt-get install -y gcc-9 g++-9
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100
+        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 100
         
     - name: Download Xiaomi kernel source
       run: |
