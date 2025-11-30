@@ -67,16 +67,19 @@ jobs:
     - name: Fix kernel Python scripts
       run: |
         cd kernel
-        # Fix Python 2 print >> syntax to Python 3 print() function
-        # "print >> sys.stderr, msg" -> "print(msg, file=sys.stderr)"
-        sed -i 's/print\s*>>\s*sys\.stderr\s*,\s*\(.*\)/print(\1, file=sys.stderr)/g' scripts/gcc-wrapper.py
-        # Also use python3 explicitly
-        sed -i 's|#!/usr/bin/env python|#!/usr/bin/env python3|g' scripts/gcc-wrapper.py
+        # Use python3
+        sed -i 's|#!/usr/bin/env python$|#!/usr/bin/env python3|g' scripts/gcc-wrapper.py
+        # Fix Python 2 "print >> sys.stderr, msg," (trailing comma = no newline)
+        # -> Python 3 "print(msg, file=sys.stderr, end='')"
+        sed -i 's/print\s*>>\s*sys\.stderr\s*,\s*\(.*\),$/print(\1, file=sys.stderr, end="")/g' scripts/gcc-wrapper.py
+        # Fix Python 2 "print >> sys.stderr, msg" (no trailing comma)
+        # -> Python 3 "print(msg, file=sys.stderr)"
+        sed -i 's/print\s*>>\s*sys\.stderr\s*,\s*\(.*[^,]\)$/print(\1, file=sys.stderr)/g' scripts/gcc-wrapper.py
         # Show the fixed file for debugging
         echo "=== Fixed gcc-wrapper.py ==="
         cat scripts/gcc-wrapper.py
         echo "==========================="
-        # Disable module signing to avoid certificate errors
+        # Disable module signing
         scripts/config --disable CONFIG_MODULE_SIG
         scripts/config --disable CONFIG_MODULE_SIG_ALL
         scripts/config --set-str CONFIG_MODULE_SIG_KEY ""
