@@ -67,11 +67,19 @@ jobs:
     - name: Fix kernel Python scripts
       run: |
         cd kernel
-        # Fix Python 2 to Python 3 print syntax in gcc-wrapper.py
-        find . -name "*.py" -exec sed -i 's/print >> sys.stderr,/print(/g; s/print >> [^,]*,/print(/g' {} \; || true
+        # Fix Python 2 print >> syntax to Python 3 print() function
+        # "print >> sys.stderr, msg" -> "print(msg, file=sys.stderr)"
+        sed -i 's/print\s*>>\s*sys\.stderr\s*,\s*\(.*\)/print(\1, file=sys.stderr)/g' scripts/gcc-wrapper.py
+        # Also use python3 explicitly
+        sed -i 's|#!/usr/bin/env python|#!/usr/bin/env python3|g' scripts/gcc-wrapper.py
+        # Show the fixed file for debugging
+        echo "=== Fixed gcc-wrapper.py ==="
+        cat scripts/gcc-wrapper.py
+        echo "==========================="
         # Disable module signing to avoid certificate errors
         scripts/config --disable CONFIG_MODULE_SIG
         scripts/config --disable CONFIG_MODULE_SIG_ALL
+        scripts/config --set-str CONFIG_MODULE_SIG_KEY ""
         make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
         
     - name: Build v4l2loopback module
