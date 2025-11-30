@@ -93,8 +93,8 @@ jobs:
         cd v4l2loopback
         export ARCH=arm64
         export CROSS_COMPILE=aarch64-linux-gnu-
-        # Disable warnings as errors for mixed declarations
-        export EXTRA_CFLAGS="-Wno-declaration-after-statement -Wno-error"
+        # Disable warnings as errors
+        export EXTRA_CFLAGS="-Wno-declaration-after-statement -Wno-missing-attributes -Wno-error"
         make KERNEL_DIR=../kernel ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CONFIG_MODULE_SIG=n EXTRA_CFLAGS="$EXTRA_CFLAGS"
         
     - name: Upload module
